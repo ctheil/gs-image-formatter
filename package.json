@@ -11,7 +11,12 @@
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.0",
+    "@types/chroma-js": "^2.4.4",
     "@types/react-dropzone": "^5.1.0",
+    "blurhash": "^2.0.5",
+    "browser-image-compression": "^2.0.2",
+    "buffer": "^6.0.3",
+    "chroma-js": "^3.1.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.439.0",

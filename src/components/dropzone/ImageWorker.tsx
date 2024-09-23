@@ -1,9 +1,11 @@
 import encode from "@/utils/blurhash/encode"
 import { Progress } from "../ui/progress"
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import IMap, { IMapError } from "@/models/IMap"
+import { toast } from "sonner"
 
 type Props = {
-  image: File
+  data: IMap
 }
 
 function getImageData(image: HTMLImageElement): ImageData | undefined {
@@ -15,6 +17,7 @@ function getImageData(image: HTMLImageElement): ImageData | undefined {
   ctx.drawImage(image, 0, 0)
   return ctx.getImageData(0, 0, image.width, image.height)
 }
+
 function GenerateBlurHash(image: HTMLImageElement): string | undefined {
   const data = getImageData(image)
   if (!data) return
@@ -35,27 +38,67 @@ type GeneratedImageData = {
 //
 // }
 
-export default function ImageWorker({ image }: Props) {
-  const [progress, setProgress] = useState({ value: 0, text: "Uploading" })
-  const [data, setData] = useState<GeneratedImageData>({ blurhash: "" })
+export default function ImageWorker({ data }: Props) {
+  const [imap, setImap] = useState(data)
+  const [progress, setProgress] = useState(data.progress)
 
-  const src = URL.createObjectURL(image)
+
+  // useMemo(() => {
+  //   const updateProgress = (newProgress: { value: number, msg: string }) => {
+  //     console.log("updateProgress", newProgress)
+  //     setProgress(newProgress)
+  //   }
+  //
+  //   const error = imap.manipulate(updateProgress)
+  //   if (error instanceof IMapError) {
+  //     toast.error(error.friendlyMessage)
+  //   }
+  //
+  // }, [])
+  // useCallback(() => {
+  //   const updateProgress = (newProgress: { value: number, msg: string }) => {
+  //     console.log("updateProgress", newProgress)
+  //     setProgress(newProgress)
+  //   }
+  //
+  //   const error = imap.manipulate(updateProgress)
+  //   if (error instanceof IMapError) {
+  //     toast.error(error.friendlyMessage)
+  //   }
+  //
+  //
+  // }, [])
+  useEffect(() => {
+    const updateProgress = (newProgress: { value: number, msg: string }) => {
+      console.log("updateProgress", newProgress)
+      setProgress(newProgress)
+    }
+
+    const error = imap.manipulate(updateProgress)
+    if (error instanceof IMapError) {
+      toast.error(error.friendlyMessage)
+    }
+
+
+  }, [])
+
+
+  console.log("imap in ImageWorker: ", imap)
+
 
   return (
-    <div className="max-w-[1000px] min-w-[300px] h-auto relative">
-      <img src={src} />
+    <div className="max-w-[1000px] min-w-[33%] h-auto relative">
+      <img src={imap.getImageSrc()} />
       {progress.value > -1 && progress.value < 100 && <PreviewProgress progress={progress} />}
       <div className="absolute bottom-0 left-0 right-0 min-h-10 bg-gradient-to-t from-slate-900 to-slate-900/0 pt-20 flex flex-col p-4" >
-        <PreviewProp title="Name" value={image.name.split(".")[0]} />
-        <PreviewProp title="File-Type" value={image.name.split(".")[1]} />
-        <PreviewProp title="Size" value={calcImageSize(image.size)} />
-
+        <PreviewProp title="Name" value={imap.getFileName()} />
+        <PreviewProp title="File-Type" value={imap.getFileType()} />
+        <PreviewProp title="Size" value={imap.getFileSize("KB")} />
       </div>
     </div>
   )
 
 }
-
 type PreviewProps = {
   title: string,
   value: string,
@@ -87,13 +130,13 @@ function calcImageSize(size: number): string {
 /**
  * Progress should be percentage!
   */
-function PreviewProgress(props: { progress: { value: number, text: string } }) {
-  const { value, text } = props.progress
+function PreviewProgress(props: { progress: { value: number, msg: string } }) {
+  const { value, msg } = props.progress
   if (value < 0 || value > 100) return
 
   return <div className="absolute bottom-0 left-0 right-0 top-0 bg-slate-900/50 flex flex-col items-center justify-center p-10">
     <Progress value={value} />
-    <p className="pt-4 text-lg text-slate-100">{text}...</p>
+    <p className="pt-4 text-lg text-slate-100">{msg}...</p>
 
   </div>
 
